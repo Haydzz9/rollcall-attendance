@@ -245,6 +245,7 @@ export default function App() {
         />
       )}
 
+      <p className="footnote">Programmer: Haydee Dulay-Limson</p>
       <BottomNav active={activeTab} onChange={setActiveTab} />
     </div>
   );

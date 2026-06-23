@@ -3,6 +3,7 @@
   "private": true,
   "version": "2.0.0",
   "type": "module",
+  "author": "Haydee Dulay-Limson",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",

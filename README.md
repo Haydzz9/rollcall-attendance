@@ -1,5 +1,7 @@
 # RollCall — QR Attendance (version 2)
 
+**Programmer:** Haydee Dulay-Limson
+
 React/TypeScript/PWA rewrite of the `attendance/attendance-scanner.html` prototype. Same Google account, Drive folder ("RollCall Attendance") and Google Sheet, rebuilt with offline-safe session history and installable PWA support. No backend — runs entirely in the browser.
 
 ## Run it
