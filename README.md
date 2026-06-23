@@ -1,6 +1,6 @@
 # RollCall — QR Attendance (version 2)
 
-React/TypeScript/PWA rewrite of the `attendance/attendance-scanner.html` prototype. Same Google account, Drive folder ("RollCall Attendance") and Google Sheet, rebuilt with a roster system, offline-safe session history, and installable PWA support. No backend — runs entirely in the browser.
+React/TypeScript/PWA rewrite of the `attendance/attendance-scanner.html` prototype. Same Google account, Drive folder ("RollCall Attendance") and Google Sheet, rebuilt with offline-safe session history and installable PWA support. No backend — runs entirely in the browser.
 
 ## Run it
 
@@ -23,18 +23,7 @@ Without step 2, sign-in and Drive Backup will fail with a redirect/origin error 
 
 ## QR code format
 
-- **New roster-based codes** (recommended going forward): the QR encodes just the person's **ID** (e.g. `3018`). Add that ID and the person's name to the **Roster** tab (CSV upload with an `ID,Name` header, or add manually) so the scanner can look up the name.
-- **Legacy codes**: any QR that contains a `/`, e.g. `3018/Limson, Haydee D`, is still parsed as `ID/Name` directly (matching the original prototype's format) — already-printed cards keep working with no roster entry needed.
-- If an ID-only code isn't found in the roster, the scan is flagged red and **not** recorded — add the person to the roster first, then re-scan.
-
-## Roster CSV format
-
-```csv
-ID,Name
-3018,"Limson, Haydee D"
-1042,Juan Dela Cruz
-```
-Quote names that contain commas. The header is case-insensitive.
+Each QR code must encode `<ID>/<Name>` directly, e.g. `3018/Limson, Haydee D` — matching the original prototype's printed ID cards. A code with no `/` (or that looks like a URL, e.g. a test QR from a generator site) is rejected as unrecognized and not recorded.
 
 ## Attendance CSV format
 
@@ -49,7 +38,7 @@ ID, Name, Date, Time, Status
 
 Sign in under **Drive Backup** to opt in. Every successful scan rewrites that session's tab in the "RollCall Attendance" Google Sheet with the full up-to-date header block + roll (an atomic overwrite, not an incremental append — this avoids row-ordering races if multiple scans sync close together), and re-uploads the session's CSV snapshot to the "RollCall Attendance" Drive folder.
 
-If a sync fails (e.g. offline), the session is marked unsynced in **Sessions** history; it retries automatically when the browser comes back online, or you can tap **Retry sync** manually. Scanning itself works fully offline — roster lookups and session storage live in IndexedDB.
+If a sync fails (e.g. offline), the session is marked unsynced in **Sessions** history; it retries automatically when the browser comes back online, or you can tap **Retry sync** manually. Scanning itself works fully offline — session storage lives in IndexedDB.
 
 ## Testing
 

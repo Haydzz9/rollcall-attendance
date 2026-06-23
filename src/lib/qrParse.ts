@@ -5,24 +5,19 @@ export interface ParsedCode {
 }
 
 /**
- * Scanned codes are normally "<ID>" looked up against the roster.
- * Codes containing a "/" are treated as the legacy "<ID>/<Name>" format
- * from already-printed cards, so those keep working without a roster entry.
- * URLs (e.g. test QR codes from a generator site) contain "/" too but are
- * never a valid "<ID>/<Name>" pair, so they're excluded and fall through to
- * the roster lookup instead (where they'll correctly come back unmatched).
+ * Printed ID cards encode "<ID>/<Name>" (e.g. "3018/Limson, Haydee D") directly in the QR.
+ * URLs contain "/" too (e.g. a test QR from a generator site) but are never a valid pair,
+ * so they're rejected rather than misparsed into a garbage id/name.
  */
-export function parseScannedCode(raw: string, roster: Record<string, string>): ParsedCode {
+export function parseScannedCode(raw: string): ParsedCode {
   const s = raw.trim();
   const slashIndex = s.indexOf('/');
   const looksLikeUrl = /^[a-z][a-z0-9+.-]*:\/\//i.test(s);
-  if (slashIndex !== -1 && !looksLikeUrl) {
-    const id = s.slice(0, slashIndex).trim() || '(unknown)';
-    const name = s.slice(slashIndex + 1).trim() || '(unknown)';
-    return { id, name, matched: true };
+  if (slashIndex === -1 || looksLikeUrl) {
+    return { id: s || '(unknown)', name: '', matched: false };
   }
 
-  const id = s || '(unknown)';
-  const name = roster[id];
-  return { id, name: name ?? '', matched: Boolean(name) };
+  const id = s.slice(0, slashIndex).trim() || '(unknown)';
+  const name = s.slice(slashIndex + 1).trim() || '(unknown)';
+  return { id, name, matched: true };
 }

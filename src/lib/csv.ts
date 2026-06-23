@@ -1,32 +1,4 @@
-import Papa from 'papaparse';
-import type { AttendanceRecord, RosterEntry, SessionInfo } from '../types';
-
-export interface ParsedRoster {
-  entries: RosterEntry[];
-  skippedRows: number;
-}
-
-/** Roster CSV has an "ID,Name" header (case-insensitive); names may contain commas. */
-export function parseRosterCsv(text: string): ParsedRoster {
-  const result = Papa.parse<Record<string, string>>(text, {
-    header: true,
-    skipEmptyLines: true,
-    transformHeader: (h) => h.trim().toLowerCase()
-  });
-
-  const entries: RosterEntry[] = [];
-  let skippedRows = 0;
-  for (const row of result.data) {
-    const id = (row.id ?? '').trim();
-    const name = (row.name ?? '').trim();
-    if (!id || !name) {
-      skippedRows++;
-      continue;
-    }
-    entries.push({ id, name });
-  }
-  return { entries, skippedRows };
-}
+import type { AttendanceRecord, SessionInfo } from '../types';
 
 function csvEscape(value: string): string {
   if (/[",\n]/.test(value)) return '"' + value.replace(/"/g, '""') + '"';

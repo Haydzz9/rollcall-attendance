@@ -1,8 +1,3 @@
-export interface RosterEntry {
-  id: string;
-  name: string;
-}
-
 export interface SessionInfo {
   event: string;
   subject: string;

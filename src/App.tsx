@@ -6,18 +6,17 @@ import { AuthGate } from './components/AuthGate';
 import { WhoBar } from './components/WhoBar';
 import { SessionPanel } from './components/SessionPanel';
 import { DrivePanel } from './components/DrivePanel';
-import { RosterPanel } from './components/RosterPanel';
 import { ScannerPanel, type DecodeOutcome } from './components/ScannerPanel';
 import { LastScanCallout, type LastScan } from './components/LastScanCallout';
 import { AttendanceRoll } from './components/AttendanceRoll';
 import { ExportBar } from './components/ExportBar';
 import { SessionsHistoryPanel } from './components/SessionsHistoryPanel';
 import { BottomNav, type Tab } from './components/BottomNav';
-import { getRoster, getSessions, saveSessions, setRoster as persistRoster } from './lib/db';
+import { getSessions, saveSessions } from './lib/db';
 import { downloadSessionCsv } from './lib/csv';
 import { parseScannedCode } from './lib/qrParse';
 import { trySyncSession, withSessionLock } from './lib/sync';
-import type { AttendanceRecord, RosterEntry, SessionInfo, SessionRecord } from './types';
+import type { AttendanceRecord, SessionInfo, SessionRecord } from './types';
 
 function nowDateTime(): { date: string; time: string } {
   const now = new Date();
@@ -32,8 +31,6 @@ export default function App() {
   const { profile, error: authError, configured: authConfigured, signOut } = useAuth();
   const { connected: driveConnected, configured: driveConfigured, connect, disconnect } = useDriveAuth();
 
-  const [roster, setRosterState] = useState<Record<string, string>>({});
-  const [rosterLoaded, setRosterLoaded] = useState(false);
   const [sessions, setSessions] = useState<SessionRecord[]>([]);
   const [sessionsLoaded, setSessionsLoaded] = useState(false);
   // Source of truth for sync logic: updated synchronously (not just on render) so a
@@ -55,20 +52,12 @@ export default function App() {
   const [retryingId, setRetryingId] = useState<string | null>(null);
 
   useEffect(() => {
-    getRoster().then((r) => {
-      setRosterState(r);
-      setRosterLoaded(true);
-    });
     getSessions().then((s) => {
       sessionsRef.current = s;
       setSessions(s);
       setSessionsLoaded(true);
     });
   }, []);
-
-  useEffect(() => {
-    if (rosterLoaded) persistRoster(roster);
-  }, [roster, rosterLoaded]);
 
   useEffect(() => {
     if (sessionsLoaded) saveSessions(sessions);
@@ -135,16 +124,17 @@ export default function App() {
   const handleDecode = useCallback(
     (raw: string): DecodeOutcome => {
       if (!currentSession) return 'warn';
-      const { id, name, matched } = parseScannedCode(raw, roster);
+      const { id, name, matched } = parseScannedCode(raw);
+
+      if (!matched) {
+        setLastScan({ name: '(unrecognized)', id, kind: 'warn', message: 'Unrecognized code — expected ID/Name format' });
+        return 'warn';
+      }
 
       const already = currentSession.records.find((r) => r.id === id);
       if (already) {
         setLastScan({ name: already.name, id, kind: 'dup', message: 'Already recorded' });
         return 'dup';
-      }
-      if (!matched) {
-        setLastScan({ name: '(not found)', id, kind: 'warn', message: 'Not found in roster — add them in Roster tab' });
-        return 'warn';
       }
 
       const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
@@ -157,7 +147,7 @@ export default function App() {
       void syncSession(sessionId);
       return 'ok';
     },
-    [currentSession, roster, syncSession, updateSessions]
+    [currentSession, syncSession, updateSessions]
   );
 
   const handleRemoveRecord = useCallback(
@@ -198,14 +188,6 @@ export default function App() {
     },
     [syncSession]
   );
-
-  const handleImportRoster = useCallback((entries: RosterEntry[]) => {
-    setRosterState((prev) => {
-      const next = { ...prev };
-      for (const e of entries) next[e.id] = e.name;
-      return next;
-    });
-  }, []);
 
   const [activeTab, setActiveTab] = useState<Tab>('scan');
 
@@ -252,22 +234,6 @@ export default function App() {
             Tap "Download CSV" to save locally — sign in to Drive Backup above to also auto-sync each scan.
           </p>
         </>
-      )}
-
-      {activeTab === 'roster' && (
-        <RosterPanel
-          roster={roster}
-          onImport={handleImportRoster}
-          onAdd={(id, name) => setRosterState((prev) => ({ ...prev, [id]: name }))}
-          onRename={(id, name) => setRosterState((prev) => ({ ...prev, [id]: name }))}
-          onDelete={(id) =>
-            setRosterState((prev) => {
-              const next = { ...prev };
-              delete next[id];
-              return next;
-            })
-          }
-        />
       )}
 
       {activeTab === 'sessions' && (

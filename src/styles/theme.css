@@ -211,12 +211,6 @@ tbody td.del button { border: none; background: none; color: var(--err); font-fa
 }
 .btn-sm:disabled { background: #9c9684; color: #5a5648; cursor: not-allowed; }
 
-.upload-row { display: flex; gap: 10px; align-items: center; margin-bottom: 10px; }
-.upload-row input[type="file"] { font-family: var(--mono); font-size: 12px; }
-.roster-add-row { display: flex; gap: 8px; margin-top: 12px; }
-.roster-add-row input { flex: 1; }
-.roster-add-row button { background: var(--moss); color: var(--paper); border: none; padding: 0 14px; font-family: var(--mono); cursor: pointer; }
-
 @media (prefers-reduced-motion: reduce) {
   .scan-flash { transition: none; }
 }

@@ -1,8 +1,7 @@
-export type Tab = 'scan' | 'roster' | 'sessions';
+export type Tab = 'scan' | 'sessions';
 
 const TABS: { id: Tab; label: string }[] = [
   { id: 'scan', label: 'Scan' },
-  { id: 'roster', label: 'Roster' },
   { id: 'sessions', label: 'Sessions' }
 ];
 
