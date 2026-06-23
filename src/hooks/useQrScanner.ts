@@ -41,6 +41,15 @@ export function useQrScanner(onDecode: (raw: string) => void) {
   const rafRef = useRef<number | null>(null);
   const lastCodeRef = useRef<{ value: string; time: number } | null>(null);
 
+  // tick's own requestAnimationFrame(tick) call below re-invokes the exact closure it was
+  // created with, not whichever closure the latest render produced — so if onDecode were
+  // called directly, the running scan loop would keep calling the *original* onDecode
+  // (and its stale view of session records) for as long as scanning continues, letting the
+  // same ID be re-recorded instead of caught as a duplicate. Routing through a ref that's
+  // updated every render keeps tick itself stable while always calling the latest handler.
+  const onDecodeRef = useRef(onDecode);
+  onDecodeRef.current = onDecode;
+
   const [scanning, setScanning] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [torchOn, setTorchOn] = useState(false);
@@ -63,14 +72,14 @@ export function useQrScanner(onDecode: (raw: string) => void) {
             const last = lastCodeRef.current;
             if (!last || last.value !== code.data || now - last.time > DEBOUNCE_MS) {
               lastCodeRef.current = { value: code.data, time: now };
-              onDecode(code.data);
+              onDecodeRef.current(code.data);
             }
           }
         }
       }
     }
     rafRef.current = requestAnimationFrame(tick);
-  }, [onDecode]);
+  }, []);
 
   const stop = useCallback(() => {
     setScanning(false);
